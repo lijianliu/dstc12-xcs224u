@@ -7,8 +7,7 @@ Setting up environment and installing packages:
 ```
 conda create -n dstc12 python=3.11
 pip install -r requirements.txt
-. s.set_paths.sh
-cd DSTC12
+. ./set_paths.sh
 ```
 
 ## Getting familiar with the baseline code
@@ -16,6 +15,15 @@ cd DSTC12
 Running theme detection
 ```
 python scripts/run_theme_detection.py <dataset_file> <preferences_file> <result_file>
+```
+
+e.g. for Banking:
+
+```
+python scripts/run_theme_detection.py \
+    dstc12-data/AppenBaking/all.jsonl \
+    dstc12-data/AppenBanking/preference_pairs.json \
+    appen_banking_predicted.jsonl
 ```
 
 Running evaluation:
