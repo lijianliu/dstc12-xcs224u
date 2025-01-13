@@ -1,12 +1,10 @@
-## My Project
+## Dialog System Technology Challenge 12 - Controllable Conversation Theme Detection track
 
-TODO: Fill this README out!
+See the task description at https://dstc12.dstc.community/tracks
 
-Be sure to:
+## Coming up
 
-* Change the title in this README
-* Edit your repository description on GitHub
-* Write in your license below and create a LICENSE file
+Baseline code & the getting-started guide
 
 ## Security
 
@@ -14,5 +12,5 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 
 ## License
 
-This library is licensed under the LICENSE NAME HERE License.
+This library is licensed under the CC-BY-NC-4.0 License.
 
