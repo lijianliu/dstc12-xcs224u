@@ -24,42 +24,22 @@ def nmi(references=None, predictions=None):
     return normalized_mutual_info_score(references, predictions)
 
 
-def rouge(references=None, predictions=None, metrics=['rouge1', 'rouge2', 'rouge3'], average=False):
+def rouge_with_multiple_references(references=None, predictions=None, metrics=['rouge1', 'rouge2', 'rougeL'], average=True):
     assert len(references) == len(predictions)
+    assert len(set([len(refs_i) for refs_i in references])) == 1, 'Inconsistent number of references per datapoint provided'
     scorer = rouge_scorer.RougeScorer(metrics, use_stemmer=True)
-    scores = [scorer.score(ref, pred) for ref, pred in zip(references, predictions)]
+    scores = [scorer.score_multi(refs, pred) for refs, pred in zip(references, predictions)]
     if average:
-        scores_aggregated = {metric: {'precision': 0, 'recall': 0, 'fmeasure': 0} for metric in scores}
-        for score in scores:
-            for metric in score:
-                scores_aggregated[metric]['precision'] += score[metric].precision / len(scores)
-                scores_aggregated[metric]['recall'] += score[metric].recall / len(scores)
-                scores_aggregated[metric]['fmeasure'] += score[metric].fmeasure / len(scores)
-        result = {
-            metric_name: Score(metric['precision'], metric['recall'], metric['fmeasure'])
-            for metric_name, metric in result.items()
-        }
+        result = {}
+        for metric in metrics:
+            result[metric] = Score(
+                np.mean([score[metric].precision for score in scores]),
+                np.mean([score[metric].recall for score in scores]),
+                np.mean([score[metric].fmeasure for score in scores])
+            )
     else:
         result = scores
     return result
-
-
-def rouge_with_multiple_references(references_list, predictions):
-    scores = [rouge(refs_i, predictions, aggregate=True) for refs_i in references_list]
-    scores_averaged = {
-        metric_name: {
-            'precision': 0,
-            'recall': 0,
-            'fmeasure': 0
-        } for metric_name in scores[0]
-    }
-
-    for score_i in scores:
-        for metric_name, score in score_i.items():
-            scores_averaged[metric_name]['precision'] += score.precision / len(scores)
-            scores_averaged[metric_name]['recall'] += score.recall / len(scores)
-            scores_averaged[metric_name]['fmeasure'] += score.fmeasure / len(scores)
-    return scores_averaged
 
 
 def cosine_similarity_with_multiple_references(references_list, predictions):
@@ -104,3 +84,21 @@ def llm_score(predictions, llm):
         judge_output = chain.invoke({'theme_label': prediction})
         scores.append(process_llm_judge_output(judge_output))
     return np.mean(scores)
+
+
+def ___rouge_with_multiple_references(references_list, predictions):
+    scores = [rouge(refs_i, predictions, aggregate=True) for refs_i in references_list]
+    scores_averaged = {
+        metric_name: {
+            'precision': 0,
+            'recall': 0,
+            'fmeasure': 0
+        } for metric_name in scores[0]
+    }
+
+    for score_i in scores:
+        for metric_name, score in score_i.items():
+            scores_averaged[metric_name]['precision'] += score.precision / len(scores)
+            scores_averaged[metric_name]['recall'] += score.recall / len(scores)
+            scores_averaged[metric_name]['fmeasure'] += score.fmeasure / len(scores)
+    return scores_averaged
