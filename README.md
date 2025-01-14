@@ -30,7 +30,7 @@ Running evaluation:
 
 coming up
 
-## Running LLM
+## Running the LLM
 Some parts of logic used in this baseline use an LLM being run locally:
 
 * theme labeling in `run_theme_detection.py`
