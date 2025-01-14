@@ -36,7 +36,7 @@ Some parts of logic used in this baseline use an LLM being run locally:
 * theme labeling in `run_theme_detection.py`
 * evaluation of theme labels against the Theme Label Guideline - coming up
 
-We use `lmsys/vicuna-13b-v1.5` by default which we tested on 4x Nvidia V100's (@16GB each). Please feel free to use the local setup or API access that works best for you. In case of any questions, please feel free to contact the organizers e.g. via Github issues.
+We use `lmsys/vicuna-13b-v1.5` by default which we tested on 4x Nvidia V100's (16GB each). Please feel free to use a locally run model or an API that works best for you. In case of any questions, please feel free to contact the organizers e.g. via Github issues.
 
 ## Security
 
