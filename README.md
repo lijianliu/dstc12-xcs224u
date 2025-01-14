@@ -14,7 +14,7 @@ pip install -r requirements.txt
 
 Running theme detection
 ```
-python scripts/run_theme_detection.py <dataset_file> <preferences_file> <result_file>
+python scripts/run_theme_detection.py <dataset_file> <preferences_file> <result_dataset_with_predictions_file>
 ```
 
 e.g. for Banking:
@@ -28,13 +28,15 @@ python scripts/run_theme_detection.py \
 
 Running evaluation:
 
-coming up
+```
+python scripts/run_evaluation.py <dataset_with_predictions>
+```
 
 ## Running the LLM
 Some parts of logic used in this baseline use an LLM being run locally:
 
 * theme labeling in `run_theme_detection.py`
-* evaluation of theme labels against the Theme Label Guideline - coming up
+* evaluation of theme labels against the Theme Label Guideline
 
 We use `lmsys/vicuna-13b-v1.5` by default which we tested on 4x Nvidia V100's (16GB each). Please feel free to use a locally run model or an API that works best for you. In case of any questions, please feel free to contact the organizers e.g. via Github issues.
 
