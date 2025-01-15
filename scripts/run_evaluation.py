@@ -84,4 +84,6 @@ if __name__ == '__main__':
             label1_references.append(utterance['theme_label']['label_1'])
             label2_references.append(utterance['theme_label']['label_2'])
             label_predictions.append(utterance['theme_label_predicted'])
-    main((label1_references, label2_references), label_predictions, args.embedding_model_name, args.llm_name)
+    metrics = main((label1_references, label2_references), label_predictions, args.embedding_model_name, args.llm_name)
+    for metric, value in metrics.items():
+        print(f'{metric}: {value:.3f}')
