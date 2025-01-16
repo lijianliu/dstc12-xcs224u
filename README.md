@@ -6,6 +6,7 @@ See the task description at https://dstc12.dstc.community/tracks
 Setting up environment and installing packages:
 ```
 conda create -n dstc12 python=3.11
+conda activate dstc12
 pip install -r requirements.txt
 . ./set_paths.sh
 ```
