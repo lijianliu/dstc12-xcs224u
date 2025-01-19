@@ -1,5 +1,6 @@
-## Dialog System Technology Challenge 12 - Controllable Conversation Theme Detection track
+# Dialog System Technology Challenge 12 - Controllable Conversation Theme Detection track
 
+## *** To participate in the track, please fill out the [registration form](https://forms.gle/URgeLuSUL95BHgWb6) ***
 See the task description at https://dstc12.dstc.community/tracks
 
 ## Getting started
