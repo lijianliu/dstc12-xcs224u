@@ -1,7 +1,94 @@
 # Dialog System Technology Challenge 12 - Controllable Conversation Theme Detection track
 
 ## *** To participate in the track, please fill out the [registration form](https://forms.gle/URgeLuSUL95BHgWb6) ***
-See the task description at https://dstc12.dstc.community/tracks
+DSTC12 home: https://dstc12.dstc.community/tracks
+
+## 1. Motivation  
+Theme detection plays a critical role in analyzing conversations, particularly in domains like customer support, sales, and marketing. Automatically identifying and categorizing themes can significantly reduce the time spent on manual analysis of lengthy conversations.  
+
+While theme detection is similar to dialogue intent detection, the key difference lies in its purpose. Intent detection is used in downstream dialogue systems where responses are predefined based on intent categories. In contrast, theme detection provides a summary of the conversation from the customer’s perspective, allowing for various surface forms and user-driven customizations.  
+
+### **Challenges for Participants:**  
+- Designing a system that can **capture nuanced themes** beyond predefined intent categories.  
+- Handling **multiple valid surface forms** for theme labels while maintaining consistency.  
+- Balancing **flexibility and accuracy** in theme detection without compromising clarity.  
+
+## 2. Proposed Task  
+The goal of this track is to develop a **Controllable Theme Detection** system capable of:  
+- Clustering unlabeled utterances into themes.  
+- Generating concise and natural language labels for each theme.  
+- Adapting theme granularity based on **user preferences** to support different levels of detail.  
+
+To achieve this, participants will be provided with:  
+- A dataset of raw conversation utterances.  
+- User preferences indicating whether certain utterances should belong to the same theme.  
+- A **Theme Label Writing Guideline** to ensure high-quality and consistent labels.  
+
+### **Challenges for Participants:**  
+- **Granularity control**: Developing a system that adjusts theme clusters based on user preferences.  
+- **Zero-shot domain transfer**: Ensuring that the model generalizes well to unseen test domains.  
+- **Balancing specificity and generality**: Labels should be informative but not overly specific.  
+
+## 3. Datasets  
+This track builds upon the **NatCS dataset**, which contains customer support dialogues across multiple domains.  
+
+### **Dataset Overview:**  
+- **Training Domain:** Banking  
+- **Development Domain:** Finance  
+- **Testing Domain:** Undisclosed (for zero-shot evaluation)  
+
+Participants will receive:  
+1. **Utterances and dialogue context** – Some utterances may lack explicit details and require surrounding dialogue context for accurate labeling.  
+2. **User preferences for clustering** – A set of utterance pairs with binary labels indicating whether they belong to the same theme.  
+3. **Gold standard theme labels** – Available for training and development but **hidden for the test set** to assess generalization.  
+
+### **Challenges for Participants:**  
+- **Extracting meaningful themes** from natural conversations that may include ambiguity or informal language.  
+- **Leveraging user preferences** to fine-tune theme granularity effectively.  
+- **Handling out-of-domain test cases** with minimal prior knowledge.  
+
+## 4. Evaluation  
+The evaluation consists of two key components:  
+
+### **4.1 Clustering Metrics**  
+- **Normalized Mutual Information (NMI)** – Measures the agreement between predicted and reference clusters while ignoring permutations.  
+- **Accuracy (ACC) Score** – Evaluates how well predicted clusters align with reference clusters using the Hungarian algorithm.  
+
+### **4.2 Label Generation Metrics**  
+- **Cosine Similarity** – Measures the semantic similarity between predicted and reference labels using Sentence-BERT embeddings.  
+- **ROUGE Score** – Analyzes n-gram overlap, useful for comparing short, concise word sequences.  
+- **LLM-Based Scoring** – Assesses label quality based on compliance with the provided **Theme Label Writing Guideline**.  
+- **Human Evaluation (if applicable)** – Top-performing models may be manually reviewed to assess real-world usability.  
+
+### **Challenges for Participants:**  
+- Ensuring **high clustering accuracy** despite ambiguous utterances.  
+- Generating **labels that align with user expectations** while maintaining conciseness.  
+- Avoiding **overfitting to training domains** to perform well on the zero-shot test domain. 
+
+## 5. Theme Label Writing Guideline  
+To maintain consistency and quality, participants must follow specific guidelines when generating theme labels.  
+
+### **5.1 Exclusion of Unnecessary Words**  
+- Labels should be **concise (2–5 words long)** and avoid:  
+  - Articles (e.g., *the, a*).  
+  - Auxiliary verbs (e.g., *is, have*).  
+  - Pronouns (e.g., *he, she, it*).  
+  - Demonstratives (e.g., *this, that*).  
+  - Overly specific or context-sensitive words.  
+
+### **5.2 Theme Labels as Verb Phrases**  
+- Labels should be action-based, starting with a verb.  
+- The verb should be in its **citation form** (e.g., *sign up* rather than *signing up*).  
+- Avoid noun phrases and general claims (e.g., *report defective product* instead of *defective product*).  
+
+### **5.3 Balancing Generality and Specificity**  
+- Labels should provide **enough detail to be useful** but not be overly specific.  
+- Example:  
+  - ✅ **Good:** *schedule appointments*  
+  - ❌ **Too General:** *ask about appointments*  
+  - ❌ **Too Specific:** *schedule appointment for elderly parent*
+
+--------------------
 
 ## Getting started
 Setting up environment and installing packages:
