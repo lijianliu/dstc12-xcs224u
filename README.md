@@ -8,6 +8,8 @@ Theme detection plays a critical role in analyzing conversations, particularly i
 
 While theme detection is similar to dialogue intent detection, the key difference lies in its purpose. Intent detection is used in downstream dialogue systems where responses are predefined based on intent categories. In contrast, theme detection provides a summary of the conversation from the customer’s perspective, allowing for various surface forms and user-driven customizations.  
 
+![Task diagram](/img/DSTC12_task_large.png)
+
 ### **Challenges for Participants:**  
 - Designing a system that can **capture nuanced themes** beyond predefined intent categories.  
 - Handling **multiple valid surface forms** for theme labels while maintaining consistency.  
