@@ -13,7 +13,7 @@ While theme detection is similar to dialogue intent detection, the key differenc
 ### **Challenges for Participants:**  
 - Designing a system that can **capture nuanced themes** beyond predefined intent categories.  
 - Handling **multiple valid surface forms** for theme labels while maintaining consistency.  
-- Balancing **flexibility and accuracy** in theme detection without compromising clarity.  
+- Balancing **style following and accuracy** in theme detection without compromising clarity.  
 
 ## 2. Proposed Task  
 The goal of this track is to develop a **Controllable Theme Detection** system capable of:  
@@ -24,12 +24,7 @@ The goal of this track is to develop a **Controllable Theme Detection** system c
 To achieve this, participants will be provided with:  
 - A dataset of raw conversation utterances.  
 - User preferences indicating whether certain utterances should belong to the same theme.  
-- A **Theme Label Writing Guideline** to ensure high-quality and consistent labels.  
-
-### **Challenges for Participants:**  
-- **Granularity control**: Developing a system that adjusts theme clusters based on user preferences.  
-- **Zero-shot domain transfer**: Ensuring that the model generalizes well to unseen test domains.  
-- **Balancing specificity and generality**: Labels should be informative but not overly specific.  
+- A **Theme Label Writing Guideline** to ensure high-quality and consistent labels.   
 
 ## 3. Datasets  
 This track builds upon the **NatCS dataset**, which contains customer support dialogues across multiple domains.  
@@ -61,11 +56,6 @@ The evaluation consists of two key components:
 - **ROUGE Score** – Analyzes n-gram overlap, useful for comparing short, concise word sequences.  
 - **LLM-Based Scoring** – Assesses label quality based on compliance with the provided **Theme Label Writing Guideline**.  
 - **Human Evaluation (if applicable)** – Top-performing models may be manually reviewed to assess real-world usability.  
-
-### **Challenges for Participants:**  
-- Ensuring **high clustering accuracy** despite ambiguous utterances.  
-- Generating **labels that align with user expectations** while maintaining conciseness.  
-- Avoiding **overfitting to training domains** to perform well on the zero-shot test domain. 
 
 ## 5. Theme Label Writing Guideline  
 To maintain consistency and quality, participants must follow specific guidelines when generating theme labels.  
