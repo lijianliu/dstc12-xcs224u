@@ -112,7 +112,7 @@ python scripts/run_theme_detection.py \
 Running evaluation:
 
 ```
-python scripts/run_evaluation.py <dataset_with_predictions>
+python scripts/run_evaluation.py <ground_truth_file> <predictions_file>
 ```
 
 ## Running the LLM

@@ -60,7 +60,8 @@ def main(references, predictions, embedding_model_name, llm_name):
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('dataset_with_predictions_file', type=str)
+    parser.add_argument('ground_truth_file', type=str)
+    parser.add_argument('prediction_file', type=str)
     parser.add_argument('--embedding-model-name', type=str, default='sentence-transformers/all-mpnet-base-v2')
     parser.add_argument('--llm-name', type=str, default='lmsys/vicuna-13b-v1.5')
     return parser.parse_args()
@@ -72,18 +73,22 @@ if __name__ == '__main__':
     if not os.getenv("HUGGINGFACEHUB_API_TOKEN"):
         os.environ["HUGGINGFACEHUB_API_TOKEN"] = getpass.getpass("Enter your token: ")
 
-    with open(args.dataset_with_predictions_file) as f:
-        dataset_with_predictions = [json.loads(line) for line in f]
+    with open(args.ground_truth_file) as f:
+        ground_truth = [json.loads(line) for line in f]
+    with open(args.predictions_file) as f:
+        predictions = [json.loads(line) for line in f]
 
     label1_references, label2_references, label_predictions = [], [], []
-    for dialog in dataset_with_predictions:
-        for utterance in dialog['turns']:
-            if utterance['theme_label'] is None:
+    for dialog_gt, dialog_pred in zip(ground_truth, predictions):
+        assert len(dialog_gt['turns']) == len(dialog_pred['turns'])
+        for utterance_gt, utterance_pred in zip(dialog_gt['turns'], dialog_pred['turns']):
+            assert utterance_gt['utterance_id'] == utterance_pred['utterance_id']
+            if utterance_gt['theme_label'] is None:
                 continue
-            uid = utterance['utterance_id']
-            label1_references.append(utterance['theme_label']['label_1'])
-            label2_references.append(utterance['theme_label']['label_2'])
-            label_predictions.append(utterance['theme_label_predicted'])
+            uid = utterance_gt['utterance_id']
+            label1_references.append(utterance_gt['theme_label']['label_1'])
+            label2_references.append(utterance_gt['theme_label']['label_2'])
+            label_predictions.append(utterance_pred['theme_label_predicted'])
     metrics = main((label1_references, label2_references), label_predictions, args.embedding_model_name, args.llm_name)
     for metric, value in metrics.items():
         print(f'{metric}: {value:.3f}')
