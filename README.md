@@ -87,9 +87,10 @@ To maintain consistency and quality, participants must follow specific guideline
 ## Getting started
 Setting up environment and installing packages:
 ```
-conda create -n dstc12 python=3.11
+conda create -n dstc12 python=3.11 "setuptools<65" "numpy>=1.11.0" "scipy>=0.17.0" "cython==0.29.36"
 conda activate dstc12
-pip install -r requirements.txt
+pip install -r requirements.txt --no-cache-dir
+pip install scikit-learn==0.22.2.post1 --no-cache-dir
 . ./set_paths.sh
 ```
 
