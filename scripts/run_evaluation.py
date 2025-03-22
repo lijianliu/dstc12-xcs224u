@@ -39,7 +39,9 @@ def run_non_llm_eval(references, predictions, embedding_model_name):
     return {
         'acc': avg_acc,
         'nmi': avg_nmi,
-        'rouge': avg_rouge,
+        'rouge_1': avg_rouge['rouge1'].fmeasure,
+        'rouge_2': avg_rouge['rouge2'].fmeasure,
+        'rouge_l': avg_rouge['rougeL'].fmeasure,
         'cosine_similarity': avg_cosine_similarity,
     }
 
@@ -61,7 +63,7 @@ def main(references, predictions, embedding_model_name, llm_name):
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('ground_truth_file', type=str)
-    parser.add_argument('prediction_file', type=str)
+    parser.add_argument('predictions_file', type=str)
     parser.add_argument('--embedding-model-name', type=str, default='sentence-transformers/all-mpnet-base-v2')
     parser.add_argument('--llm-name', type=str, default='lmsys/vicuna-13b-v1.5')
     return parser.parse_args()

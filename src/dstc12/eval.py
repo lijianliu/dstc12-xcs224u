@@ -43,9 +43,12 @@ def rouge_with_multiple_references(references=None, predictions=None, metrics=['
 
 
 def cosine_similarity_with_multiple_references(references_list, predictions):
-    scores = [cosine_similarity(refs_i, predictions) for refs_i in references_list]
-    scores_averaged = sum(scores) / len(scores)
-    return scores_averaged
+    similarities = np.zeros((len(references_list), len(predictions)), dtype=np.float32)
+    for i, refs_i in enumerate(references_list):
+        assert len(refs_i) == len(predictions)
+        for j, (ref_ij, pred_j) in enumerate(zip(refs_i, predictions)):
+            similarities[i, j] = cosine_similarity(np.array(ref_ij).reshape(1, -1), np.array(pred_j).reshape(1, -1))
+    return np.mean(similarities)
 
 
 def process_llm_judge_output(output):
