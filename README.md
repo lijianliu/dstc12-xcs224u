@@ -11,8 +11,6 @@ Testset: [AppenTravel](/dstc12-data/AppenTravel)
 
 Submit the final results via [this form](https://form.jotform.com/250896633081058) (1 submission per team)
 
-Known issue in the data: [link](https://github.com/amazon-science/dstc12-controllable-conversational-theme-detection/issues/5) (to be fixed soon)
-
 ## 1. Motivation  
 Theme detection plays a critical role in analyzing conversations, particularly in domains like customer support, sales, and marketing. Automatically identifying and categorizing themes can significantly reduce the time spent on manual analysis of lengthy conversations.  
 
