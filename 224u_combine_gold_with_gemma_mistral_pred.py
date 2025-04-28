@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# This script 
 # The script flattens the DSTC-12 Appen Banking dataset plus two prediction files into one easy-to-browse CSV:
 #
 # Inputs (defaults)
