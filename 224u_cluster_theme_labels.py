@@ -1,110 +1,153 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Cluster theme_label_predicted strings into 10 groups,
-name each group with local Gemma-3-27B, and output CSV with confidence scores.
+Cluster predicted theme labels into N groups, name each group with Gemma,
+push labels below a similarity threshold into 'Others', and optionally plot.
+
+Example
+-------
+python cluster_theme_labels.py pulse_gemma_pred.jsonl \
+       --clusters 10 \
+       --out pulse_clusters.csv \
+       --plot pulse_clusters.png
 """
 
-import json, csv, argparse, os, glob, re
+import json, csv, argparse, os, re
 from collections import defaultdict
 
-from huggingface_hub import hf_hub_download, login
-from llama_cpp import Llama
+import numpy as np
 from sentence_transformers import SentenceTransformer, util
 from sklearn.cluster import KMeans
-import numpy as np
-from tqdm import tqdm
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+from huggingface_hub import hf_hub_download, login
+from llama_cpp import Llama
 
-# ---------- load / locate Gemma gguf -----------------------------------------
+
+# ── Load / download Gemma-3-27B GGUF ─────────────────────────────────────────
 GGUF = os.getenv("GEMMA_PATH")
 if GGUF is None:
-    repo_id, fn = "google/gemma-3-27b-it-qat-q4_0-gguf", "gemma-3-27b-it-q4_0.gguf"
+    repo_id, gguf_file = "google/gemma-3-27b-it-qat-q4_0-gguf", "gemma-3-27b-it-q4_0.gguf"
     if (tok := os.getenv("HF_TOKEN")):
         login(token=tok, add_to_git_credential=True)
-    GGUF = hf_hub_download(repo_id=repo_id, filename=fn, resume_download=True)
+    GGUF = hf_hub_download(repo_id=repo_id, filename=gguf_file, resume_download=True)
 
 gemma = Llama(model_path=GGUF, n_ctx=4096, n_gpu_layers=-1, verbose=False)
-name_prompt = (
+PROMPT_TEMPLATE = (
     "You are an expert at naming categories.\n"
-    "Given a list of short theme labels, return ONE concise cluster name "
-    "(≤9 words, Title Case, no punctuation) that best summarises them.\n\n"
-    "Labels:\n{labels}\n\n<cluster_name>"
+    "Given the theme labels below, return ONE concise cluster name "
+    "(≤4 words, Title Case, no punctuation).\n\n"
+    "{labels}\n\n<cluster_name>"
 )
-rx = re.compile(r"^[^\n<]{1,40}", re.S)   # first non-newline chunk
+rx_first_line = re.compile(r"^[^\n<]{1,60}", re.S)
 
 
 def llm_name(labels):
-    txt = "\n".join(f"- {l}" for l in labels)
-    out = gemma.create_chat_completion(
-        messages=[{"role": "user", "content": name_prompt.format(labels=txt)}],
+    joined = "\n".join(f"- {l}" for l in labels)
+    resp = gemma.create_chat_completion(
+        messages=[{"role": "user", "content": PROMPT_TEMPLATE.format(labels=joined)}],
         temperature=0.3,
         max_tokens=16,
     )["choices"][0]["message"]["content"].strip()
-    m = rx.match(out)
-    return m.group(0).strip() if m else out[:40].strip()
+    m = rx_first_line.match(resp)
+    return m.group(0).strip() if m else resp[:60].strip()
 
 
-# ---------- CLI --------------------------------------------------------------
-def parse_args():
+# ── CLI ──────────────────────────────────────────────────────────────────────
+def get_args():
     p = argparse.ArgumentParser()
-    p.add_argument("pred_jsonl", help="file produced by run_theme_detection_onecall.py")
+    p.add_argument("pred_jsonl", help="prediction JSONL file with theme_label_predicted")
+    p.add_argument("--clusters", type=int, default=10, help="number of K-means clusters")
     p.add_argument("--embed-model", default="sentence-transformers/all-mpnet-base-v2")
-    p.add_argument("--clusters", type=int, default=10)
-    p.add_argument("--out", default="clustered_labels.csv")
+    p.add_argument("--other-threshold", type=float, default=0.50,
+                   help="labels with similarity < threshold go to 'Others'")
+    p.add_argument("--out", default="clustered_labels.csv", help="output CSV")
+    p.add_argument("--plot", default=None, help="PNG output for scatter plot")
     return p.parse_args()
 
 
+# ── Main routine ────────────────────────────────────────────────────────────
 def main():
-    args = parse_args()
+    args = get_args()
 
-    # 1) collect unique predicted labels
-    labels = []
-    with open(args.pred_jsonl, encoding="utf-8") as f:
-        for line in f:
-            dlg = json.loads(line)
-            lab = dlg["turns"][-1].get("theme_label_predicted", "").strip()
-            if lab:
-                labels.append(lab)
+    # 1. Collect unique predicted labels
+    labels = {json.loads(l)["turns"][-1].get("theme_label_predicted", "").strip()
+              for l in open(args.pred_jsonl, encoding="utf-8")}
+    labels.discard("")
+    labels = sorted(labels)
+    if not labels:
+        raise ValueError("No theme_label_predicted found in the JSONL file.")
+    print(f"Unique labels collected: {len(labels)}")
 
-    unique_labels = sorted(set(labels))
-    print(f"Found {len(unique_labels)} unique predicted labels.")
+    # 2. Embed labels
+    embedder = SentenceTransformer(args.embed_model)
+    embeddings = embedder.encode(labels, normalize_embeddings=True, show_progress_bar=True)
 
-    # 2) embed & cluster
-    emb_model = SentenceTransformer(args.embed_model)
-    embs = emb_model.encode(unique_labels, normalize_embeddings=True, show_progress_bar=True)
+    # 3. K-means clustering
     kmeans = KMeans(n_clusters=args.clusters, n_init=10, random_state=42)
-    kmeans.fit(embs)
+    kmeans.fit(embeddings)
     assignments = kmeans.labels_
-    centroids = kmeans.cluster_centers_
+    centers = kmeans.cluster_centers_
 
-    # 3) name each cluster with Gemma
+    # 4. Name each cluster with Gemma
     cluster_to_labels = defaultdict(list)
-    for lbl, cid in zip(unique_labels, assignments):
+    for lbl, cid in zip(labels, assignments):
         cluster_to_labels[cid].append(lbl)
+    cluster_names = {cid: llm_name(lbs) for cid, lbs in cluster_to_labels.items()}
 
-    cluster_names = {}
-    for cid, labs in tqdm(cluster_to_labels.items(), desc="Naming clusters"):
-        cluster_names[cid] = llm_name(labs)
+    # 5. Compute similarity and assign 'Others'
+    sims = util.cos_sim(np.asarray(embeddings), np.asarray(centers)).max(dim=1).values
+    max_sim = sims.max().item()
+    csv_rows, color_list = [], []
+    for lbl, cid, vec, sim in zip(labels, assignments, embeddings, sims):
+        norm = sim / max_sim
+        if norm < args.other_threshold:
+            csv_rows.append((lbl, "Others", 0.00))
+            color_list.append("grey")
+        else:
+            csv_rows.append((lbl, cluster_names[cid], round(float(norm), 3)))
+            color_list.append(f"C{cid % 10}")
 
-    # 4) compute confidence scores
-    max_sim = 0.0
-    label_rows = []
-    for lbl, cid, vec in zip(unique_labels, assignments, embs):
-        sim = float(util.cos_sim(vec, centroids[cid]))
-        max_sim = max(max_sim, sim)
-        label_rows.append((lbl, cid, sim))
-
-    # normalise to 0–1
-    for i, (lbl, cid, sim) in enumerate(label_rows):
-        label_rows[i] = (lbl, cluster_names[cid], round(sim / max_sim, 3))
-
-    # 5) write CSV
+    # 6. Write CSV
     with open(args.out, "w", newline="", encoding="utf-8") as fo:
-        w = csv.writer(fo)
-        w.writerow(["theme_label_predicted", "theme_clustered", "score"])
-        w.writerows(sorted(label_rows, key=lambda x: x[1]))  # sort by cluster name
+        writer = csv.writer(fo)
+        writer.writerow(["theme_label_predicted", "theme_clustered", "score"])
+        writer.writerows(sorted(csv_rows, key=lambda x: x[1]))
+    print("CSV saved →", args.out)
 
-    print("✅ CSV saved to", args.out)
+    # 7. Optional 2-D scatter plot
+    if args.plot:
+        coords = PCA(n_components=2, random_state=42).fit_transform(embeddings)
+        plt.figure(figsize=(8, 6))
+
+        # Color map including 'Others'
+        unique_clusters = sorted({row[1] for row in csv_rows})
+        color_map = {name: f"C{i % 10}" for i, name in enumerate(c for c in unique_clusters if c != "Others")}
+        color_map["Others"] = "grey"
+
+        # Plot each point
+        for (x, y), (_, cl, _) in zip(coords, csv_rows):
+            plt.scatter(x, y, color=color_map[cl], s=35)
+
+        # Plot centroids (skip 'Others')
+        cent2d = PCA(n_components=2, random_state=42).fit_transform(centers)
+        for cid, (cx, cy) in enumerate(cent2d):
+            if cid in cluster_names:
+                plt.scatter(cx, cy, marker="x", color="black", s=80)
+
+        plt.title("Theme-label clusters (PCA 2-D)")
+        plt.xlabel("PCA-1")
+        plt.ylabel("PCA-2")
+
+        # Legend
+        handles = [plt.Line2D([0], [0], marker='o', color='w',
+                              markerfacecolor=color_map[n], markersize=8, label=n)
+                   for n in unique_clusters]
+        plt.legend(title="Cluster", handles=handles, bbox_to_anchor=(1.05, 1), loc='upper left')
+
+        plt.tight_layout()
+        plt.savefig(args.plot, dpi=160)
+        print("Plot saved →", args.plot)
 
 
 if __name__ == "__main__":
