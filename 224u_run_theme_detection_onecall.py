@@ -25,12 +25,14 @@ if GGUF is None:
 gemma = Llama(model_path=GGUF, n_ctx=20480, n_gpu_layers=-1, verbose=False)
 PROMPT = (
     "You are an expert conversation analyst.\n"
-    "Given the full transcript below, return ONE short theme label "
-    "(≤10 words, Title Case, no punctuation, no new line characters) that best captures the main "
-    "customer issue. Return ONLY the label.\n\n"
+    "Return ONE short theme label that captures the main customer issue.\n"
+    "- If the transcript mentions any field / column names (e.g. richMediaVideo, "
+    "richMedia360View, actionSubCateg), include them verbatim.\n"
+    "- Keep it under 30 words, Title Case.\n"
+    "- Return ONLY the label.\n\n"
     "Transcript:\n{dialogue}\n\n<theme_label>"
 )
-rx = re.compile(r"^[^\n<]{1,60}", re.S)     # grab first line as label
+rx = re.compile(r"^[^\n<]{1,300}", re.S)     # grab first line as label
 
 # ────────────────────────────────────────────────────────
 def parse_args():
@@ -39,16 +41,38 @@ def parse_args():
     p.add_argument("result_file")           # output JSONL
     return p.parse_args()
 
-def llm_label(paragraph: str) -> str:
+
+def llm_label(paragraph: str, debug: bool = True) -> str:
+    """
+    Generate a single-line theme label with Gemma and,
+    when debug=True, print the full prompt and model reply.
+    """
+    # ── 1. build user message ───────────────────────
+    user_msg = PROMPT.format(dialogue=paragraph)
+
+    # ── 2. call the model ───────────────────────────
     out = gemma.create_chat_completion(
-        messages=[{"role": "user",
-                   "content": PROMPT.format(dialogue=paragraph)}],
+        messages=[{"role": "user", "content": user_msg}],
         temperature=0.3,
-        max_tokens=32
+        max_tokens=100
     )
-    text = out["choices"][0]["message"]["content"].strip()
-    m = rx.match(text)
-    return m.group(0).strip() if m else text
+
+    # ── 3. extract text + clean with regex ──────────
+    raw_reply = out["choices"][0]["message"]["content"].strip()
+    m = rx.match(raw_reply)
+    label = m.group(0).strip() if m else raw_reply
+
+    # ── 4. optional debug printout ──────────────────
+    if debug:
+        print("\n──────── prompt sent to Gemma ────────")
+        print(user_msg)
+        print("──────── raw model reply ─────────────")
+        print(raw_reply)
+        print("──────── cleaned label ───────────────")
+        print(label)
+        print("──────────────────────────────────────\n")
+
+    return label
 
 def main():
     args = parse_args()
