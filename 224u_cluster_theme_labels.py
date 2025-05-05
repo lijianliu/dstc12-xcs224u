@@ -36,7 +36,7 @@ gemma = Llama(model_path=GGUF, n_ctx=4096, n_gpu_layers=-1, verbose=False)
 PROMPT_TEMPLATE = (
     "You are an expert at naming categories.\n"
     "Given the theme labels below, return ONE concise cluster name "
-    "(≤4 words, Title Case, no punctuation).\n\n"
+    "(≤15 words, Title Case, no punctuation). Avoid too general words such as 'data', 'issue'\n\n"
     "{labels}\n\n<cluster_name>"
 )
 rx_first_line = re.compile(r"^[^\n<]{1,60}", re.S)
