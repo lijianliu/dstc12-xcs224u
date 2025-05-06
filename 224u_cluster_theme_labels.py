@@ -18,7 +18,7 @@ from collections import defaultdict
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
 from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, HDBSCAN
 import matplotlib.pyplot as plt
 from huggingface_hub import hf_hub_download, login
 from llama_cpp import Llama
@@ -83,11 +83,29 @@ def main():
     embedder = SentenceTransformer(args.embed_model)
     embeddings = embedder.encode(labels, normalize_embeddings=True, show_progress_bar=True)
 
-    # 3. K-means clustering
-    kmeans = KMeans(n_clusters=args.clusters, n_init=10, random_state=42)
-    kmeans.fit(embeddings)
-    assignments = kmeans.labels_
-    centers = kmeans.cluster_centers_
+    # 3. K-means clustering if not using HDBSCAN
+    if args.usedbscan:
+        print("Using HDBSCAN clustering")
+        # Optional: HDBSCAN clustering
+        # Note to Lijian: Tune min_cluster_size first, then min_samples.
+        # Explanation of parameters:
+        # - min_samples: Minimum number of samples in a neighborhood for a point to be considered a core point.
+        # - min_cluster_size: Minimum size of a cluster.
+        # - metric: Distance metric to use. 'cosine' is good for text embeddings.
+        # - cluster_selection_method: 'eom' for the excess of mass method, 'leaf' for the leaf method.
+        # See further details: https://scikit-learn.org/stable/auto_examples/cluster/plot_hdbscan.html
+        hdbscan = HDBSCAN(min_samples=5, min_cluster_size=10, metric="cosine", cluster_selection_method="eom")
+        hdbscan.fit(embeddings)
+        assignments = hdbscan.labels_
+        centers = hdbscan.centroids_
+
+    else:
+        print("Using K-means clustering")
+        # K-means clustering
+        kmeans = KMeans(n_clusters=args.clusters, n_init=10, random_state=42)
+        kmeans.fit(embeddings)
+        assignments = kmeans.labels_
+        centers = kmeans.cluster_centers_
 
     # 4. Name each cluster with Gemma
     cluster_to_labels = defaultdict(list)
