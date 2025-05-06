@@ -148,7 +148,35 @@ def main():
         plt.tight_layout()
         plt.savefig(args.plot, dpi=160)
         print("Plot saved →", args.plot)
+        plt.show()
+    elif args.plot3d:
+        coords = PCA(n_components=3, random_state=42).fit_transform(embeddings)
+        fig = plt.figure(figsize=(8, 6))
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(coords[:, 0], coords[:, 1], coords[:, 2], c=color_list, s=35)
 
+        # Plot centroids (skip 'Others')
+        cent3d = PCA(n_components=3, random_state=42).fit_transform(centers)
+        for cid, (cx, cy, cz) in enumerate(cent3d):
+            if cid in cluster_names:
+                ax.scatter(cx, cy, cz, marker="x", color="black", s=80)
+
+        ax.set_title("Theme-label clusters (PCA 3-D)")
+        ax.set_xlabel("PCA-1")
+        ax.set_ylabel("PCA-2")
+        ax.set_zlabel("PCA-3")
+
+        # Legend
+        handles = [plt.Line2D([0], [0], marker='o', color='w',
+                              markerfacecolor=color_map[n], markersize=8, label=n)
+                   for n in unique_clusters]
+        ax.legend(title="Cluster", handles=handles, bbox_to_anchor=(1.05, 1), loc='upper left')
+        ax.view_init(elev=20, azim=30)
+
+        plt.tight_layout()
+        plt.savefig(args.plot, dpi=160)
+        print("Plot saved →", args.plot)
+        plt.show()
 
 if __name__ == "__main__":
     main()

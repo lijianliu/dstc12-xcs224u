@@ -1,0 +1,50 @@
+name: xcs224u
+channels:
+  - conda-forge
+dependencies:
+  - bzip2=1.0.8=h99b78c6_7
+  - ca-certificates=2025.4.26=hbd8a1cb_0
+  - joblib=1.5.0=pyhd8ed1ab_0
+  - libblas=3.9.0=31_h10e41b3_openblas
+  - libcblas=3.9.0=31_hb3479ef_openblas
+  - libcxx=20.1.4=ha82da77_0
+  - libexpat=2.7.0=h286801f_0
+  - libffi=3.4.6=h1da3d7d_1
+  - libgfortran=14.2.0=heb5dd2a_105
+  - libgfortran5=14.2.0=h2c44a93_105
+  - liblapack=3.9.0=31_hc9a63f6_openblas
+  - liblzma=5.8.1=h39f12f2_0
+  - libmpdec=4.0.0=h99b78c6_0
+  - libopenblas=0.3.29=openmp_hf332438_0
+  - libsqlite=3.49.1=h3f77e49_2
+  - libzlib=1.3.1=h8359307_2
+  - llvm-openmp=20.1.4=hdb05f8b_0
+  - ncurses=6.5=h5e97a16_3
+  - numpy=2.2.5=py313h41a2e72_0
+  - openssl=3.5.0=h81ee809_1
+  - pandas=2.2.3=py313h668b085_3
+  - pip=25.1.1=pyh145f28c_0
+  - python=3.13.3=h81fe080_101_cp313
+  - python-dateutil=2.9.0.post0=pyhff2d567_1
+  - python-tzdata=2025.2=pyhd8ed1ab_0
+  - python_abi=3.13=7_cp313
+  - pytz=2025.2=pyhd8ed1ab_0
+  - readline=8.2=h1d1bf99_2
+  - scikit-learn=1.6.1=py313hecba28c_0
+  - scipy=1.15.2=py313h9a24e0a_0
+  - six=1.17.0=pyhd8ed1ab_0
+  - threadpoolctl=3.6.0=pyhecae5ae_0
+  - tk=8.6.13=h5083fa2_1
+  - tzdata=2025b=h78e105d_0
+  - pip:
+      - filelock==3.18.0
+      - fsspec==2025.3.2
+      - jinja2==3.1.6
+      - markupsafe==3.0.2
+      - mpmath==1.3.0
+      - networkx==3.4.2
+      - setuptools==80.3.1
+      - sympy==1.13.1
+      - torch==2.6.0
+      - typing-extensions==4.13.2
+prefix: /Users/dhruboroy29/miniforge3/envs/xcs224u

@@ -218,6 +218,30 @@ def main():
                    ncol=3)
         plt.tight_layout(); plt.savefig(args.plot, dpi=160)
         print(f"Plot saved → {args.plot}")
+        plt.show()
+    elif args.plot3d:
+        print("Building 3D PCA plot …")
+        coords = PCA(n_components=3, random_state=42).fit_transform(embs)
+        fig = plt.figure(figsize=(8, 6))
+        ax = fig.add_subplot(111, projection='3d')
+        for (x, y, z), (_, cl, _) in zip(coords, rows):
+            ax.scatter(x, y, z, color=cmap[cl], s=35)
+        ax.set_title("Prompt-Defined Top-10 Clusters (+ Others) — PCA-3D")
+        ax.set_xlabel("PCA-1"); ax.set_ylabel("PCA-2"); ax.set_zlabel("PCA-3")
+        handles = [plt.Line2D([0], [0], marker='o', color='w',
+                              markerfacecolor=cmap[cl],
+                              markersize=8, label=cl)
+                   for cl in all_clusters]
+        ax.legend(title="Cluster",
+                  handles=handles,
+                  bbox_to_anchor=(0.5, -0.15),
+                  loc='upper center',
+                  ncol=3)
+        ax.view_init(elev=20, azim=30)
+
+        plt.tight_layout(); plt.savefig(args.plot, dpi=160)
+        print(f"Plot saved → {args.plot}")
+        plt.show()
 
 if __name__ == "__main__":
     main()
