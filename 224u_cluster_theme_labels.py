@@ -94,7 +94,11 @@ def main():
         # - metric: Distance metric to use. 'cosine' is good for text embeddings.
         # - cluster_selection_method: 'eom' for the excess of mass method, 'leaf' for the leaf method.
         # See further details: https://scikit-learn.org/stable/auto_examples/cluster/plot_hdbscan.html
-        hdbscan = HDBSCAN(min_samples=5, min_cluster_size=10, metric="cosine", cluster_selection_method="eom")
+        hdbscan = HDBSCAN(min_samples=5,
+                          min_cluster_size=10,
+                          metric="cosine",
+                          store_centers="centroid",
+                          cluster_selection_method="eom")
         hdbscan.fit(embeddings)
         assignments = hdbscan.labels_
         centers = hdbscan.centroids_
