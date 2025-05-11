@@ -5,6 +5,7 @@ ONE-call theme detection:
   • concatenate every utterance in a conversation
   • feed the paragraph to local LLaMA-4 model
   • store the single theme label on the *last* turn
+  • support resume with caching in cache/<conversation_id>.txt
 """
 
 from argparse import ArgumentParser
@@ -12,26 +13,23 @@ import json, os, copy, tqdm, re
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
-# ── load prompt from file ───────────────────────────────
+# ── Load prompt from file ───────────────────────────────
 with open("prompt.txt", "r", encoding="utf-8") as f:
     SYSTEM_PROMPT = f"<|system|>\n{f.read().strip()}\n\n"
 
-# ── regex to clean LLM output ──────────────────────────
-rx = re.compile(r"^[^\n<]{1,300}", re.S)  # grab first line as label
+rx = re.compile(r"^[^\n<]{1,300}", re.S)
 
-# ── model loading (LLaMA-4 Scout 17B) ───────────────────
+# ── Model setup ─────────────────────────────────────────
 model_id = "meta-llama/Llama-4-Scout-17B-16E-Instruct"
-
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_quant_type="nf4",
     bnb_4bit_use_double_quant=True,
     bnb_4bit_compute_dtype=torch.bfloat16
 )
-
 device_map = {
     "model.embed_tokens": 0,
-    **{f"model.layers.{i}": i // 6 for i in range(48)},  # even layer split across 8 GPUs
+    **{f"model.layers.{i}": i // 6 for i in range(48)},
     "model.norm": 7,
     "lm_head": 7
 }
@@ -46,10 +44,8 @@ model = AutoModelForCausalLM.from_pretrained(
     low_cpu_mem_usage=True,
     trust_remote_code=True
 )
-
 tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
 print("✅ Model loaded.\n")
-
 
 # ───────────────────────────────────────────────────────
 def parse_args():
@@ -59,14 +55,26 @@ def parse_args():
     return p.parse_args()
 
 
-def llm_label(paragraph: str, debug: bool = True) -> str:
-    """
-    Generate a theme label with LLaMA-4.
-    """
+def llm_label(paragraph: str, cache_path: str, debug: bool = True) -> str:
+    # Resume logic
+    if os.path.exists(cache_path):
+        if debug:
+            print(f"✅ Skipping — already cached: {cache_path}")
+        return open(cache_path, "r", encoding="utf-8").read().strip()
+
+    # Check length
+    tokenized = tokenizer.tokenize(paragraph)
+    if len(tokenized) > 4000:
+        if debug:
+            print("⚠️ Skipping long input (>4000 tokens)")
+        label = "[Too long to label]"
+        with open(cache_path, "w", encoding="utf-8") as f:
+            f.write(label)
+        return label
+
+    # Build prompt
     prompt = f"{SYSTEM_PROMPT}<|user|>\n{paragraph.strip()}\n<|assistant|>\n"
-    MAX_TOKENS = 40960
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=MAX_TOKENS).to("cuda:0")
-    # inputs = tokenizer(prompt, return_tensors="pt").to("cuda:0")
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=4096).to("cuda:0")
 
     with torch.no_grad():
         outputs = model.generate(
@@ -78,15 +86,16 @@ def llm_label(paragraph: str, debug: bool = True) -> str:
 
     raw_reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
     raw_reply = raw_reply.split("<|assistant|>")[-1].strip()
-    m = rx.match(raw_reply)
-    label = m.group(0).strip() if m else raw_reply
+    label = raw_reply
+
+    # Write to cache
+    with open(cache_path, "w", encoding="utf-8") as f:
+        f.write(label)
 
     if debug:
         print("\n──────── prompt sent to LLaMA-4 ────────")
         print(prompt)
-        print("──────── raw model reply ─────────────")
-        print(raw_reply)
-        print("──────── cleaned label ───────────────")
+        print("──────── raw model reply/label ─────────────")
         print(label)
         print("──────────────────────────────────────\n")
 
@@ -96,11 +105,18 @@ def llm_label(paragraph: str, debug: bool = True) -> str:
 def main():
     args = parse_args()
     dialogs = [json.loads(l) for l in open(args.dataset_file)]
-
     dialogs_pred = copy.deepcopy(dialogs)
+
+    os.makedirs("cache", exist_ok=True)
+
     for dlg in tqdm.tqdm(dialogs_pred, desc="LLaMA-4 labelling"):
+        conversation_id = dlg.get("conversation_id") or dlg["turns"][0].get("utterance_id")
+        if not conversation_id:
+            raise ValueError("Missing conversation_id or utterance_id for caching.")
+        cache_path = os.path.join("cache", f"{conversation_id}.txt")
+
         paragraph = "\n".join(t.get("utterance", "") or "" for t in dlg["turns"])
-        label = llm_label(paragraph)
+        label = llm_label(paragraph, cache_path)
         dlg["turns"][-1]["theme_label_predicted"] = label
 
     with open(args.result_file, "w", encoding="utf-8") as fo:

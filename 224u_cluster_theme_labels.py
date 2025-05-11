@@ -18,7 +18,8 @@ from collections import defaultdict
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
 from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA, HDBSCAN
+from sklearn.decomposition import PCA
+from hdbscan import HDBSCAN
 import matplotlib.pyplot as plt
 from huggingface_hub import hf_hub_download, login
 from llama_cpp import Llama
@@ -32,7 +33,7 @@ if GGUF is None:
         login(token=tok, add_to_git_credential=True)
     GGUF = hf_hub_download(repo_id=repo_id, filename=gguf_file, resume_download=True)
 
-gemma = Llama(model_path=GGUF, n_ctx=4096, n_gpu_layers=-1, verbose=False)
+gemma = Llama(model_path=GGUF, n_ctx=8192, n_gpu_layers=-1, verbose=False)
 PROMPT_TEMPLATE = (
     "You are an expert at naming categories.\n"
     "Given the theme labels below, return ONE concise cluster name "
@@ -63,8 +64,9 @@ def get_args():
                    help="labels with similarity < threshold go to 'Others'")
     p.add_argument("--out", default="clustered_labels.csv", help="output CSV")
     p.add_argument("--plot", default=None, help="PNG output for scatter plot")
+    p.add_argument("--plot3d", action="store_true", help="Optional: 3D plot")
+    p.add_argument("--usedbscan", action="store_true", help="Use HDBSCAN instead of KMeans")  # ← ADD THIS
     return p.parse_args()
-
 
 # ── Main routine ────────────────────────────────────────────────────────────
 def main():
